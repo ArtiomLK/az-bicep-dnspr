@@ -1,0 +1,24 @@
+on:
+  workflow_dispatch: {}
+  push:
+    paths:
+      - '!**.md'
+      - '.github/workflows/dev.orchestrator.yml'
+      - 'examples/examples.bicep'
+      - 'main.bicep'
+
+name: Deploy Bicep Modules to AZ and ACR
+jobs:
+  deploy-bicep-module-to-az-and-acr:
+    uses: ArtiomLK/commands/.github/workflows/deploy-bicep-module-to-acr.yaml@main
+    with:
+      ENVIRONMENT: dev
+      ACR_MODULE_N: dnspr
+      RG_N: rg-azure-bicep-dnspr
+      MAIN_BICEP_FILE_PATH: main.bicep
+      TEST_BICEP_FILE_FILE: examples/examples.bicep
+    secrets:
+      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+      ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+      ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+      ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
