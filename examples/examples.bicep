@@ -6,31 +6,34 @@ targetScope = 'resourceGroup'
 var tags = {
   project: 'bicephub'
   env: 'dev'
-}
 
+}
+// ------------------------------------------------------------------------------------------------
+// Region 1
+// ------------------------------------------------------------------------------------------------
 param location string = 'eastus'
 
 // DNSPR
-param dnspr_n string = 'dnspr-resolver'
+param dnspr_n string = 'dnspr-dev-eastus'
 
 // VNET
-param vnet_dnspr_n string = 'vnet-dnsresolver'
-param vnet_dnspr_addr string = '10.7.0.0/24'
+param vnet_dnspr_n string = 'vnet-hub-dev-eastus'
+param vnet_dnspr_addr string = '10.10.0.0/24'
 
 // SNET Inbound
 param snet_dnspr_inbound_n string = 'snet-dnspr-inbound'
-param snet_dnspr_inbound_addr string = '10.7.0.0/28'
+param snet_dnspr_inbound_addr string = '10.10.0.0/28'
 
 // SNET Outbound
 param snet_dnspr_outbound_n string = 'snet-dnspr-outbound'
-param snet_dnspr_outbound_addr string = '10.7.0.16/28'
+param snet_dnspr_outbound_addr string = '10.10.0.16/28'
 
 // ------------------------------------------------------------------------------------------------
 // Prerequisites
 // ------------------------------------------------------------------------------------------------
 
-// resolver vnet
-resource resolverVnet 'Microsoft.Network/virtualNetworks@2022-01-01' = {
+// resolver on hub vnet
+resource vnetHubEastUs 'Microsoft.Network/virtualNetworks@2022-01-01' = {
   name: vnet_dnspr_n
   location: location
   properties: {
@@ -79,11 +82,11 @@ resource resolverVnet 'Microsoft.Network/virtualNetworks@2022-01-01' = {
 // DNS Private Resolver
 // ------------------------------------------------------------------------------------------------
 
-module dnspr '../main.bicep' = {
-  name: 'dnspr'
+module dnsprEastUs '../main.bicep' = {
+  name: dnspr_n
   params: {
     dnspr_n: dnspr_n
-    vnet_dnspr_id: resolverVnet.id
+    vnet_dnspr_id: vnetHubEastUs.id
     snet_dnspr_inbound_n: snet_dnspr_inbound_n
     snet_dnspr_outbound_n: snet_dnspr_outbound_n
     location: location
