@@ -37,23 +37,24 @@ param location string
 @description('name of the dns private resolver')
 param dnspr_n string
 
-// VNET and subnet for DNSPR
+// Inbound
 @description('id of the virtual network where DNS resolver will be created')
 param vnet_dnspr_n string
 var vnet_dnspr_id = subscriptionResourceId('Microsoft.Network/virtualNetworks', vnet_dnspr_n)
 
 @description('name of the subnet that will be used for private resolver inbound endpoint')
 param snet_dnspr_inbound_n string
-var snet_dnspr_inbound_id = subscriptionResourceId('Microsoft.Network/virtualNetworks', vnet_dnspr_n, snet_dnspr_inbound_n)
+var snet_dnspr_inbound_id = subscriptionResourceId('Microsoft.Network/virtualNetworks/subnets', vnet_dnspr_n, snet_dnspr_inbound_n)
 
-@description('name of the subnet that will be used for private resolver outbound endpoint')
-param snet_dnspr_outbound_n string
-var snet_dnspr_outbound_id = subscriptionResourceId('Microsoft.Network/virtualNetworks', vnet_dnspr_n, snet_dnspr_outbound_n)
 
 @description('name of the vnet link that links outbound endpoint with forwarding rule set')
 param resolvervnetlink string = 'vnetlink'
 
-// Forwarding ruleset and forwarding rule
+// Outbound Forwarding ruleset and forwarding rule
+@description('name of the subnet that will be used for private resolver outbound endpoint')
+param snet_dnspr_outbound_n string
+var snet_dnspr_outbound_id = subscriptionResourceId('Microsoft.Network/virtualNetworks/subnets', vnet_dnspr_n, snet_dnspr_outbound_n)
+
 @description('name of the forwarding ruleset')
 param forwardingRulesetName string = 'forwardingRule'
 
