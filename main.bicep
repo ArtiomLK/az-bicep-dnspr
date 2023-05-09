@@ -92,7 +92,7 @@ resource inEndpoint 'Microsoft.Network/dnsResolvers/inboundEndpoints@2022-07-01'
       {
         privateIpAllocationMethod: 'Dynamic'
         subnet: {
-          id: '${vnet_dnspr_id}/subnets/${snet_dnspr_inbound_n}'
+          id: subscriptionResourceId(vnet_dnspr_id, 'subnets', snet_dnspr_inbound_n)
         }
       }
     ]
@@ -105,7 +105,7 @@ resource outEndpoint 'Microsoft.Network/dnsResolvers/outboundEndpoints@2022-07-0
   location: location
   properties: {
     subnet: {
-      id: '${vnet_dnspr_id}/subnets/${snet_dnspr_outbound_n}'
+      id: subscriptionResourceId(vnet_dnspr_id, 'subnets', snet_dnspr_outbound_n)
     }
   }
 }
