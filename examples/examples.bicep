@@ -81,7 +81,6 @@ resource vnetHubEastUs 'Microsoft.Network/virtualNetworks@2022-01-01' = {
 // ------------------------------------------------------------------------------------------------
 // DNS Private Resolver
 // ------------------------------------------------------------------------------------------------
-
 module dnsprEastUs '../main.bicep' = {
   name: dnspr_n
   params: {
