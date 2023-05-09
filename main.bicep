@@ -39,13 +39,16 @@ param dnspr_n string
 
 // VNET and subnet for DNSPR
 @description('id of the virtual network where DNS resolver will be created')
-param vnet_dnspr_id string
+param vnet_dnspr_n string
+var vnet_dnspr_id = subscriptionResourceId('Microsoft.Network/virtualNetworks', vnet_dnspr_n)
 
 @description('name of the subnet that will be used for private resolver inbound endpoint')
 param snet_dnspr_inbound_n string
+var snet_dnspr_inbound_id = subscriptionResourceId('Microsoft.Network/virtualNetworks', vnet_dnspr_n, 'subnets', snet_dnspr_inbound_n)
 
 @description('name of the subnet that will be used for private resolver outbound endpoint')
 param snet_dnspr_outbound_n string
+var snet_dnspr_outbound_id = subscriptionResourceId('Microsoft.Network/virtualNetworks', vnet_dnspr_n, 'subnets', snet_dnspr_outbound_n)
 
 @description('name of the vnet link that links outbound endpoint with forwarding rule set')
 param resolvervnetlink string = 'vnetlink'
@@ -92,7 +95,7 @@ resource inEndpoint 'Microsoft.Network/dnsResolvers/inboundEndpoints@2022-07-01'
       {
         privateIpAllocationMethod: 'Dynamic'
         subnet: {
-          id: subscriptionResourceId(vnet_dnspr_id, 'subnets', snet_dnspr_inbound_n)
+          id: snet_dnspr_inbound_id
         }
       }
     ]
@@ -105,7 +108,7 @@ resource outEndpoint 'Microsoft.Network/dnsResolvers/outboundEndpoints@2022-07-0
   location: location
   properties: {
     subnet: {
-      id: subscriptionResourceId(vnet_dnspr_id, 'subnets', snet_dnspr_outbound_n)
+      id: snet_dnspr_outbound_id
     }
   }
 }

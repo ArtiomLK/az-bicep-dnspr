@@ -86,10 +86,13 @@ module dnsprEastUs '../main.bicep' = {
   name: dnspr_n
   params: {
     dnspr_n: dnspr_n
-    vnet_dnspr_id: vnetHubEastUs.id
+    vnet_dnspr_n: vnet_dnspr_n
     snet_dnspr_inbound_n: snet_dnspr_inbound_n
     snet_dnspr_outbound_n: snet_dnspr_outbound_n
     location: location
     tags: tags
   }
+  dependsOn: [
+    vnetHubEastUs
+  ]
 }
