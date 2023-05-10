@@ -146,7 +146,7 @@ module vnetSpoke1 '../components/vnet/vnet.bicep' = [for i in range(0, length(vn
 // ------------------------------------------------------------------------------------------------
 module hubToSpokePeering '../components/vnet/peer.bicep' = [for i in range(0, length(vnet_spoke_1_names)) : {
   scope: resourceGroup(rgs[i])
-  name: 'hubToSpokePeeringDeployment'
+  name: 'hub-to-spoke-peering-deployment'
   params: {
     vnet_from_n: vnet_hub_n[i]
     vnet_to_id: vnetSpoke1[i].outputs.id
@@ -156,14 +156,13 @@ module hubToSpokePeering '../components/vnet/peer.bicep' = [for i in range(0, le
 
 module spokeToHubPeering '../components/vnet/peer.bicep' = [for i in range(0, length(vnet_spoke_1_names)) : {
   scope: resourceGroup(rgs[i])
-  name: 'spokeToHubPeeringDeployment'
+  name: 'spoke-to-hub-peering-deployment'
   params: {
     vnet_from_n: vnet_spoke_1_names[i]
     vnet_to_id: vnetHubs[i].outputs.id
     peeringName: '${vnet_spoke_1_names[i]}-to-${vnet_hub_n[i]}'
   }
 }]
-
 
 // ------------------------------------------------------------------------------------------------
 // Deploy pdnsz
