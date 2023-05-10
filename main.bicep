@@ -55,7 +55,7 @@ var snet_dnspr_outbound_id = resourceId('Microsoft.Network/virtualNetworks/subne
 param resolvervnetlink string = 'vnetlink'
 
 @description('name of the forwarding ruleset')
-param forwardingRulesetName string = 'forwardingRule'
+param fw_ruleset_n string
 
 @description('name of the forwarding rule name')
 param forwardingRuleName string = 'contosocom'
@@ -114,7 +114,7 @@ resource outEndpoint 'Microsoft.Network/dnsResolvers/outboundEndpoints@2022-07-0
 }
 
 resource fwruleSet 'Microsoft.Network/dnsForwardingRulesets@2022-07-01' = {
-  name: forwardingRulesetName
+  name: fw_ruleset_n
   location: location
   properties: {
     dnsResolverOutboundEndpoints: [

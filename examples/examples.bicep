@@ -29,6 +29,8 @@ var snet_dnspr_inbound_addr = [for i in range(1, length(locations)): '10.${i*10}
 var snet_dnspr_outbound_n = [for l in locations: 'snet-dnspr-outbound']
 var snet_dnspr_outbound_addr = [for i in range(1, length(locations)): '10.${i*10}.0.16/28']   // 10.10.0.16/28, 10.20.0.16/28
 
+var fw_ruleset_n = [for l in locations: 'fw-ruleset-${tags.env}-${l}']
+
 // vnet-spoke-1
 var vnet_spoke_1_names = [for l in locations: 'vnet-spoke-1-${tags.env}-${l}']
 var snet_spoke_1_names = [for l in locations: 'snet-spoke-1']
@@ -157,6 +159,7 @@ module dnspr '../main.bicep' = [for i in range(0, length(locations)):  {
     vnet_dnspr_n: vnet_hub_n[i]
     snet_dnspr_inbound_n: snet_dnspr_inbound_n[i]
     snet_dnspr_outbound_n: snet_dnspr_outbound_n[i]
+    fw_ruleset_n: fw_ruleset_n[i]
     location: locations[i]
     tags: tags
   }
