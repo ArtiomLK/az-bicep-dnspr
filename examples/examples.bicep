@@ -6,20 +6,29 @@ targetScope = 'resourceGroup'
 var tags = {
   project: 'bicephub'
   env: 'dev'
-
 }
-// ------------------------------------------------------------------------------------------------
-// DNSPR Deployment parameters
-// ------------------------------------------------------------------------------------------------
+
 param rgs array = ['rg-azure-bicep-dnspr-eastus', 'rg-azure-bicep-dnspr-westus3']
 param locations array = ['eastus', 'westus3']
 
-// DNSPR
-var dnspr_n = [for l in locations: 'dnspr-${tags.env}-${l}']
-
+// ------------------------------------------------------------------------------------------------
+// Topology Deployment parameters
+// ------------------------------------------------------------------------------------------------
 // HUB VNET
 var vnet_hub_n = [for l in locations: 'vnet-hub-${tags.env}-${l}']
 var vnet_hub_addr = [for i in range(1, length(locations)): '10.${i*10}.0.0/24']   // 10.10.0.0/24, 10.20.0.0/24
+
+// vnet-spoke-1
+var vnet_spoke_1_names = [for l in locations: 'vnet-spoke-1-${tags.env}-${l}']
+var snet_spoke_1_names = [for l in locations: 'snet-spoke-1']
+var vnet_spoke_1_prefixes = [for i in range(1, length(locations)):  '10.${i*10}.1.0/24']   // 10.10.1.0/24, 10.20.1.0/24
+var snet_spoke_1_prefixes = [for i in range(1, length(locations)): '10.${i*10}.1.0/24']   // 10.10.1.0/24, 10.20.1.0/24
+
+// ------------------------------------------------------------------------------------------------
+// DNSPR Deployment parameters
+// ------------------------------------------------------------------------------------------------
+// DNSPR
+var dnspr_n = [for l in locations: 'dnspr-${tags.env}-${l}']
 
 // SNET Inbound
 var snet_dnspr_inbound_n = [for l in locations: 'snet-dnspr-inbound']
@@ -29,11 +38,20 @@ var snet_dnspr_inbound_addr = [for i in range(1, length(locations)): '10.${i*10}
 var snet_dnspr_outbound_n = [for l in locations: 'snet-dnspr-outbound']
 var snet_dnspr_outbound_addr = [for i in range(1, length(locations)): '10.${i*10}.0.16/28']   // 10.10.0.16/28, 10.20.0.16/28
 
-// vnet-spoke-1
-var vnet_spoke_1_names = [for l in locations: 'vnet-spoke-1-${tags.env}-${l}']
-var snet_spoke_1_names = [for l in locations: 'snet-spoke-1']
-var vnet_spoke_1_prefixes = [for i in range(1, length(locations)):  '10.${i*10}.1.0/24']   // 10.10.1.0/24, 10.20.1.0/24
-var snet_spoke_1_prefixes = [for i in range(1, length(locations)): '10.${i*10}.1.0/24']   // 10.10.1.0/24, 10.20.1.0/24
+// Forwarding Ruleset
+var fw_ruleset_n = [for l in locations: 'fw-ruleset-${tags.env}-${l}']
+var fw_ruleset_rule_n = [for l in locations: 'contosocom']
+var fw_ruleset_rule_domain_n = [for l in locations: 'contoso.com.']
+var fw_ruleset_rule_target_dns = [for l in locations: [
+  {
+    ipaddress: '10.0.0.4'
+    port: 53
+  }
+  {
+    ipaddress: '10.0.0.5'
+    port: 53
+  }
+]]
 
 // ------------------------------------------------------------------------------------------------
 // Prerequisites
@@ -157,6 +175,10 @@ module dnspr '../main.bicep' = [for i in range(0, length(locations)):  {
     vnet_dnspr_n: vnet_hub_n[i]
     snet_dnspr_inbound_n: snet_dnspr_inbound_n[i]
     snet_dnspr_outbound_n: snet_dnspr_outbound_n[i]
+    fw_ruleset_n: fw_ruleset_n[i]
+    fw_ruleset_rule_n: fw_ruleset_rule_n[i]
+    fw_ruleset_rule_domain_n: fw_ruleset_rule_domain_n[i]
+    fw_ruleset_rule_target_dns: fw_ruleset_rule_target_dns[i]
     location: locations[i]
     tags: tags
   }
