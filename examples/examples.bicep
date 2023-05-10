@@ -33,7 +33,7 @@ var snet_dnspr_outbound_addr = [for i in range(1, length(locations)): '10.${i*10
 var vnet_spoke_1_names = [for l in locations: 'vnet-spoke-1-${tags.env}-${l}']
 var snet_spoke_1_names = [for l in locations: 'snet-spoke-1']
 var vnet_spoke_1_prefixes = [for i in range(1, length(locations)):  '10.${i*10}.1.0/24']   // 10.10.1.0/24, 10.20.1.0/24
-var snet_spoke_1_prefixes = [for i in range(1, length(locations)): '10.${i*10}.0.0/24']   // 10.10.1.0/24, 10.20.1.0/24
+var snet_spoke_1_prefixes = [for i in range(1, length(locations)): '10.${i*10}.1.0/24']   // 10.10.1.0/24, 10.20.1.0/24
 
 // ------------------------------------------------------------------------------------------------
 // Prerequisites
