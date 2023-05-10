@@ -52,28 +52,19 @@ param snet_dnspr_outbound_n string
 var snet_dnspr_outbound_id = resourceId('Microsoft.Network/virtualNetworks/subnets', vnet_dnspr_n, snet_dnspr_outbound_n)
 
 @description('name of the vnet link that links outbound endpoint with forwarding rule set')
-param resolvervnetlink string = 'vnetlink'
+var resolvervnetlink = 'vnetlink-${vnet_dnspr_n}'
 
 @description('name of the forwarding ruleset')
 param fw_ruleset_n string
 
 @description('name of the forwarding rule name')
-param forwardingRuleName string = 'contosocom'
+param fw_ruleset_rule_n string
 
 @description('the target domain name for the forwarding ruleset')
-param DomainName string = 'contoso.com.'
+param fw_ruleset_rule_domain_n string
 
 @description('the list of target DNS servers ip address and the port number for conditional forwarding')
-param targetDNS array = [
-    {
-      ipaddress: '10.0.0.4'
-      port: 53
-    }
-    {
-      ipaddress: '10.0.0.5'
-      port: 53
-    }
-  ]
+param fw_ruleset_rule_target_dns array
 
 resource resolver 'Microsoft.Network/dnsResolvers@2022-07-01' = {
   name: dnspr_n
@@ -137,9 +128,9 @@ resource resolverLink 'Microsoft.Network/dnsForwardingRulesets/virtualNetworkLin
 
 resource fwRules 'Microsoft.Network/dnsForwardingRulesets/forwardingRules@2022-07-01' = {
   parent: fwruleSet
-  name: forwardingRuleName
+  name: fw_ruleset_rule_n
   properties: {
-    domainName: DomainName
-    targetDnsServers: targetDNS
+    domainName: fw_ruleset_rule_domain_n
+    targetDnsServers: fw_ruleset_rule_target_dns
   }
 }
