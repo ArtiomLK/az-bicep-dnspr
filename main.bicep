@@ -1,14 +1,8 @@
+// ------------------------------------------------------------------------------------------------
+// Deployment parameters
+// ------------------------------------------------------------------------------------------------
 @description('Az Resources tags')
 param tags object = {}
-
-@description('name of the new virtual network where DNS resolver will be created')
-param resolverVNETName string = 'dnsresolverVNET'
-
-@description('the IP address space for the resolver virtual network')
-param resolverVNETAddressSpace string = '10.7.0.0/24'
-
-@description('name of the dns private resolver')
-param dnspr_n string = 'dnspr-resolver'
 
 @description('the location for resolver VNET and dns private resolver - Azure DNS Private Resolver available in specific region, refer the documenation to select the supported region for this deployment. For more information https://docs.microsoft.com/azure/dns/dns-private-resolver-overview#regional-availability')
 @allowed([
@@ -37,17 +31,25 @@ param dnspr_n string = 'dnspr-resolver'
 ])
 param location string
 
+// ------------------------------------------------------------------------------------------------
+// DNSPR Configuration parameters
+// ------------------------------------------------------------------------------------------------
+@description('name of the dns private resolver')
+param dnspr_n string
+
+// Inbound
+@description('id of the virtual network where DNS resolver will be created')
+param vnet_dnspr_n string
+var vnet_dnspr_id = resourceId('Microsoft.Network/virtualNetworks', vnet_dnspr_n)
+
 @description('name of the subnet that will be used for private resolver inbound endpoint')
-param inboundSubnet string = 'snet-inbound'
+param snet_dnspr_inbound_n string
+var snet_dnspr_inbound_id = resourceId('Microsoft.Network/virtualNetworks/subnets', vnet_dnspr_n, snet_dnspr_inbound_n)
 
-@description('the inbound endpoint subnet address space')
-param inboundAddressPrefix string = '10.7.0.0/28'
-
+// Outbound Forwarding ruleset and forwarding rule
 @description('name of the subnet that will be used for private resolver outbound endpoint')
-param outboundSubnet string = 'snet-outbound'
-
-@description('the outbound endpoint subnet address space')
-param outboundAddressPrefix string = '10.7.0.16/28'
+param snet_dnspr_outbound_n string
+var snet_dnspr_outbound_id = resourceId('Microsoft.Network/virtualNetworks/subnets', vnet_dnspr_n, snet_dnspr_outbound_n)
 
 @description('name of the vnet link that links outbound endpoint with forwarding rule set')
 param resolvervnetlink string = 'vnetlink'
@@ -78,7 +80,7 @@ resource resolver 'Microsoft.Network/dnsResolvers@2022-07-01' = {
   location: location
   properties: {
     virtualNetwork: {
-      id: resolverVnet.id
+      id: vnet_dnspr_id
     }
   }
   tags: tags
@@ -86,14 +88,14 @@ resource resolver 'Microsoft.Network/dnsResolvers@2022-07-01' = {
 
 resource inEndpoint 'Microsoft.Network/dnsResolvers/inboundEndpoints@2022-07-01' = {
   parent: resolver
-  name: inboundSubnet
+  name: snet_dnspr_inbound_n
   location: location
   properties: {
     ipConfigurations: [
       {
         privateIpAllocationMethod: 'Dynamic'
         subnet: {
-          id: '${resolverVnet.id}/subnets/${inboundSubnet}'
+          id: snet_dnspr_inbound_id
         }
       }
     ]
@@ -102,11 +104,11 @@ resource inEndpoint 'Microsoft.Network/dnsResolvers/inboundEndpoints@2022-07-01'
 
 resource outEndpoint 'Microsoft.Network/dnsResolvers/outboundEndpoints@2022-07-01' = {
   parent: resolver
-  name: outboundSubnet
+  name: snet_dnspr_outbound_n
   location: location
   properties: {
     subnet: {
-      id: '${resolverVnet.id}/subnets/${outboundSubnet}'
+      id: snet_dnspr_outbound_id
     }
   }
 }
@@ -128,7 +130,7 @@ resource resolverLink 'Microsoft.Network/dnsForwardingRulesets/virtualNetworkLin
   name: resolvervnetlink
   properties: {
     virtualNetwork: {
-      id: resolverVnet.id
+      id: vnet_dnspr_id
     }
   }
 }
@@ -140,49 +142,4 @@ resource fwRules 'Microsoft.Network/dnsForwardingRulesets/forwardingRules@2022-0
     domainName: DomainName
     targetDnsServers: targetDNS
   }
-}
-
-resource resolverVnet 'Microsoft.Network/virtualNetworks@2022-01-01' = {
-  name: resolverVNETName
-  location: location
-  properties: {
-    addressSpace: {
-      addressPrefixes: [
-        resolverVNETAddressSpace
-      ]
-    }
-    enableDdosProtection: false
-    enableVmProtection: false
-    subnets: [
-      {
-        name: inboundSubnet
-        properties: {
-          addressPrefix: inboundAddressPrefix
-          delegations:[
-            {
-              name:'Microsoft.Network.dnsResolvers'
-              properties:{
-                serviceName:'Microsoft.Network/dnsResolvers'
-              }
-            }
-          ]
-        }
-      }
-      {
-        name: outboundSubnet
-        properties: {
-          addressPrefix: outboundAddressPrefix
-          delegations:[
-            {
-              name:'Microsoft.Network.dnsResolvers'
-              properties:{
-                serviceName:'Microsoft.Network/dnsResolvers'
-              }
-            }
-          ]
-        }
-      }
-    ]
-  }
-  tags: tags
 }
