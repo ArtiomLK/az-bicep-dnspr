@@ -64,7 +64,7 @@ module vnetHubs '../components/vnet/vnet.bicep' = [for i in range(0, length(vnet
         name: snet_dnspr_inbound_n[i]
         subnetPrefix: snet_dnspr_inbound_addr[i]
         nsgId: nsgDefault[i].outputs.id
-        delegations:[
+        delegations: [
           {
             name:'Microsoft.Network.dnsResolvers'
             properties:{
@@ -77,7 +77,7 @@ module vnetHubs '../components/vnet/vnet.bicep' = [for i in range(0, length(vnet
         name: snet_dnspr_outbound_n[i]
         subnetPrefix: snet_dnspr_outbound_addr[i]
         nsgId: nsgDefault[i].outputs.id
-        delegations:[
+        delegations: [
           {
             name:'Microsoft.Network.dnsResolvers'
             properties:{
@@ -110,6 +110,7 @@ module vnetSpoke1 '../components/vnet/vnet.bicep' = [for i in range(0, length(vn
         name: snet_spoke_1_names[i]
         subnetPrefix: snet_spoke_1_prefixes[i]
         nsgId: nsgDefault[i].outputs.id
+        delegations: []
       }
     ]
     defaultNsgId: nsgDefault[i].outputs.id
