@@ -40,13 +40,13 @@ var snet_spoke_1_prefixes = [for i in range(1, length(locations)): '10.${i*10}.0
 // ------------------------------------------------------------------------------------------------
 
 // NSG - Default
-module nsgDefault '../components/nsg/nsgDefault.bicep' = [for l in locations: {
-  scope: resourceGroup(rgs[l])
-  name: 'nsg-default-${l}'
+module nsgDefault '../components/nsg/nsgDefault.bicep' = [for i in range(0, length(locations)) : {
+  scope: resourceGroup(rgs[i])
+  name: 'nsg-default-${locations[i]}'
   params: {
     tags: tags
-    location: l
-    name: 'nsg-default-${l}'
+    location: locations[i]
+    name: 'nsg-default-${locations[i]}'
   }
 }]
 
