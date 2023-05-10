@@ -57,7 +57,6 @@ var fw_ruleset_rule_target_dns = [for l in locations: [
 // ------------------------------------------------------------------------------------------------
 // Prerequisites
 // ------------------------------------------------------------------------------------------------
-
 // NSG - Default
 module nsgDefault '../components/nsg/nsgDefault.bicep' = [for i in range(0, length(locations)) : {
   scope: resourceGroup(rgs[i])
