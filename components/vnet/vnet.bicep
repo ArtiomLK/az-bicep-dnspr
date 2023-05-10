@@ -22,6 +22,7 @@ resource vnetDeployed 'Microsoft.Network/virtualNetworks@2021-02-01' = {
         networkSecurityGroup: {
           id: empty(subnet.nsgId) ? defaultNsgId : subnet.nsgId
         }
+        delegations: empty(subnet.delegations) ? [] : subnet.delegations
       }
     }]
   }

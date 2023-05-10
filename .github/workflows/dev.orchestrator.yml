@@ -14,7 +14,7 @@ jobs:
     with:
       ENVIRONMENT: dev
       ACR_MODULE_N: dnspr
-      RG_N: rg-azure-bicep-dnspr
+      RG_N: rg-azure-bicep-dnspr-eastus
       MAIN_BICEP_FILE_PATH: main.bicep
       TEST_BICEP_FILE_FILE: examples/examples.bicep
     secrets:
