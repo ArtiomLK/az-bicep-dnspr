@@ -4,51 +4,91 @@ targetScope = 'resourceGroup'
 // ------------------------------------------------------------------------------------------------
 // Sample tags parameters
 var tags = {
-  project: 'bicephub'
+  project_n: 'bicephub'
   env: 'dev'
 
 }
 // ------------------------------------------------------------------------------------------------
-// Region 1
+// DNSPR Deployment parameters
 // ------------------------------------------------------------------------------------------------
-param location string = 'eastus'
+param locations array = ['eastus', 'westus3']
 
 // DNSPR
-param dnspr_n string = 'dnspr-dev-eastus'
+var dnspr_n = [for l in locations: 'dnspr-${tags.env}-${l}']
 
-// VNET
-param vnet_dnspr_n string = 'vnet-hub-dev-eastus'
-param vnet_dnspr_addr string = '10.10.0.0/24'
+// HUB VNET
+var vnet_dnspr_n = [for l in locations: 'vnet-hub-${tags.env}-${l}']
+var vnet_dnspr_addr = [for i in range(1, length(locations)): '10.${i*10}.0.0/24']   // 10.10.0.0/24, 10.20.0.0/24
 
 // SNET Inbound
-param snet_dnspr_inbound_n string = 'snet-dnspr-inbound'
-param snet_dnspr_inbound_addr string = '10.10.0.0/28'
+var snet_dnspr_inbound_n = [for l in locations: 'snet-dnspr-inbound']
+var snet_dnspr_inbound_addr = [for i in range(1, length(locations)): '10.${i*10}.0.0/28']   // 10.10.0.0/28, 10.20.0.0/28
 
 // SNET Outbound
-param snet_dnspr_outbound_n string = 'snet-dnspr-outbound'
-param snet_dnspr_outbound_addr string = '10.10.0.16/28'
+var snet_dnspr_outbound_n = [for l in locations: 'snet-dnspr-outbound']
+var snet_dnspr_outbound_addr = [for i in range(1, length(locations)): '10.${i*10}.0.16/28']   // 10.10.0.16/28, 10.20.0.16/28
+
+// vnet-spoke-1
+var vnet_spoke_1_names = [for l in locations: 'vnet-spoke-1-${tags.env}-${l}']
+var snet_spoke_1_names = [for l in locations: 'snet-spoke-1']
+var vnet_spoke_1_prefixes = [for i in range(1, length(locations)):  '10.${i*10}.1.0/24']   // 10.10.1.0/24, 10.20.1.0/24
+var snet_spoke_1_prefixes = [for i in range(1, length(locations)): '10.${i*10}.0.0/24']   // 10.10.1.0/24, 10.20.1.0/24
 
 // ------------------------------------------------------------------------------------------------
 // Prerequisites
 // ------------------------------------------------------------------------------------------------
 
-// resolver on hub vnet
-resource vnetHubEastUs 'Microsoft.Network/virtualNetworks@2022-01-01' = {
-  name: vnet_dnspr_n
-  location: location
+// NSG - Default
+module nsgDefault '../components/nsg/nsgDefault.bicep' = [for l in locations: {
+  name: 'nsg-default-${l}'
+  params: {
+    tags: tags
+    location: l
+    name: 'nsg-default-${l}'
+  }
+}]
+
+// ------------------------------------------------------------------------------------------------
+// VNET - Deploy Spokes Vnets
+// ------------------------------------------------------------------------------------------------
+module vnetSpoke1 '../components/vnet/vnet.bicep' = [for i in range(0, length(vnet_spoke_1_names)) :{
+  name: vnet_spoke_1_names[i]
+  params: {
+    vnet_n: vnet_spoke_1_names[i]
+    vnet_addr: vnet_spoke_1_prefixes[i]
+    subnets: [
+      {
+        name: snet_spoke_1_names[i]
+        subnetPrefix: snet_spoke_1_prefixes[i]
+        nsgId: nsgDefault[i].outputs.id
+      }
+    ]
+    defaultNsgId: nsgDefault[i].outputs.id
+    location: locations[i]
+    tags: tags
+  }
+  dependsOn: [
+    nsgDefault
+  ]
+}]
+
+// VNET HUB - with DNSPR snets
+resource vnetHubEastUs 'Microsoft.Network/virtualNetworks@2022-01-01' = [for i in range(0, length(locations)): {
+  name: vnet_dnspr_n[i]
+  location: locations[i]
   properties: {
     addressSpace: {
       addressPrefixes: [
-        vnet_dnspr_addr
+        vnet_dnspr_addr[i]
       ]
     }
     enableDdosProtection: false
     enableVmProtection: false
     subnets: [
       {
-        name: snet_dnspr_inbound_n
+        name: snet_dnspr_inbound_n[i]
         properties: {
-          addressPrefix: snet_dnspr_inbound_addr
+          addressPrefix: snet_dnspr_inbound_addr[i]
           delegations:[
             {
               name:'Microsoft.Network.dnsResolvers'
@@ -60,9 +100,9 @@ resource vnetHubEastUs 'Microsoft.Network/virtualNetworks@2022-01-01' = {
         }
       }
       {
-        name: snet_dnspr_outbound_n
+        name: snet_dnspr_outbound_n[i]
         properties: {
-          addressPrefix: snet_dnspr_outbound_addr
+          addressPrefix: snet_dnspr_outbound_addr[i]
           delegations:[
             {
               name:'Microsoft.Network.dnsResolvers'
@@ -76,22 +116,22 @@ resource vnetHubEastUs 'Microsoft.Network/virtualNetworks@2022-01-01' = {
     ]
   }
   tags: tags
-}
+}]
 
 // ------------------------------------------------------------------------------------------------
 // DNS Private Resolver
 // ------------------------------------------------------------------------------------------------
-module dnsprEastUs '../main.bicep' = {
-  name: dnspr_n
+module dnsprEastUs '../main.bicep' = [for i in range(0, length(locations)):  {
+  name: dnspr_n[i]
   params: {
-    dnspr_n: dnspr_n
-    vnet_dnspr_n: vnet_dnspr_n
-    snet_dnspr_inbound_n: snet_dnspr_inbound_n
-    snet_dnspr_outbound_n: snet_dnspr_outbound_n
-    location: location
+    dnspr_n: dnspr_n[i]
+    vnet_dnspr_n: vnet_dnspr_n[i]
+    snet_dnspr_inbound_n: snet_dnspr_inbound_n[i]
+    snet_dnspr_outbound_n: snet_dnspr_outbound_n[i]
+    location: locations[i]
     tags: tags
   }
   dependsOn: [
     vnetHubEastUs
   ]
-}
+}]

@@ -46,14 +46,13 @@ var vnet_dnspr_id = resourceId('Microsoft.Network/virtualNetworks', vnet_dnspr_n
 param snet_dnspr_inbound_n string
 var snet_dnspr_inbound_id = resourceId('Microsoft.Network/virtualNetworks/subnets', vnet_dnspr_n, snet_dnspr_inbound_n)
 
-
-@description('name of the vnet link that links outbound endpoint with forwarding rule set')
-param resolvervnetlink string = 'vnetlink'
-
 // Outbound Forwarding ruleset and forwarding rule
 @description('name of the subnet that will be used for private resolver outbound endpoint')
 param snet_dnspr_outbound_n string
 var snet_dnspr_outbound_id = resourceId('Microsoft.Network/virtualNetworks/subnets', vnet_dnspr_n, snet_dnspr_outbound_n)
+
+@description('name of the vnet link that links outbound endpoint with forwarding rule set')
+param resolvervnetlink string = 'vnetlink'
 
 @description('name of the forwarding ruleset')
 param forwardingRulesetName string = 'forwardingRule'
