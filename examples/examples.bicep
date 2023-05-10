@@ -122,52 +122,29 @@ module vnetSpoke1 '../components/vnet/vnet.bicep' = [for i in range(0, length(vn
   ]
 }]
 
+// ------------------------------------------------------------------------------------------------
+// Deploy vNet peerings
+// ------------------------------------------------------------------------------------------------
+module hubToSpokePeering '../components/vnet/peer.bicep' = [for i in range(0, length(vnet_spoke_1_names)) : {
+  name: 'hubToSpokePeeringDeployment'
+  scope: resourceGroup(rgs[i])
+  params: {
+    vnet_from_n: vnet_hub_n[i]
+    vnet_to_id: vnetSpoke1[i].outputs.id
+    peeringName: 'peer-from-${vnet_hub_n[i]}-to-${vnet_spoke_1_names[i]}'
+  }
+}]
 
-// // VNET HUB - with DNSPR snets
-// resource vnetHubEastUs 'Microsoft.Network/virtualNetworks@2022-01-01' = [for i in range(0, length(vnet_hub_n)): {
-//   name: vnet_hub_n[i]
-//   location: locations[i]
-//   properties: {
-//     addressSpace: {
-//       addressPrefixes: [
-//         vnet_hub_addr[i]
-//       ]
-//     }
-//     enableDdosProtection: false
-//     enableVmProtection: false
-//     subnets: [
-//       {
-//         name: snet_dnspr_inbound_n[i]
-//         properties: {
-//           addressPrefix: snet_dnspr_inbound_addr[i]
-//           delegations:[
-//             {
-//               name:'Microsoft.Network.dnsResolvers'
-//               properties:{
-//                 serviceName:'Microsoft.Network/dnsResolvers'
-//               }
-//             }
-//           ]
-//         }
-//       }
-//       {
-//         name: snet_dnspr_outbound_n[i]
-//         properties: {
-//           addressPrefix: snet_dnspr_outbound_addr[i]
-//           delegations:[
-//             {
-//               name:'Microsoft.Network.dnsResolvers'
-//               properties:{
-//                 serviceName:'Microsoft.Network/dnsResolvers'
-//               }
-//             }
-//           ]
-//         }
-//       }
-//     ]
-//   }
-//   tags: tags
-// }]
+module spokeToHubPeering '../components/vnet/peer.bicep' = [for i in range(0, length(vnet_spoke_1_names)) : {
+  name: 'spokeToHubPeeringDeployment'
+  scope: resourceGroup(rgs[i])
+  params: {
+    vnet_from_n: vnet_spoke_1_names[i]
+    vnet_to_id: vnetHubs[i].outputs.id
+    peeringName: 'peer-from-${vnet_spoke_1_names[i]}-to-${vnet_hub_n[i]}'
+  }
+}]
+
 
 // ------------------------------------------------------------------------------------------------
 // DNS Private Resolver
