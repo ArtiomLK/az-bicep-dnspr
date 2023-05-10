@@ -4,7 +4,7 @@ targetScope = 'resourceGroup'
 // ------------------------------------------------------------------------------------------------
 // Sample tags parameters
 var tags = {
-  project_n: 'bicephub'
+  project: 'bicephub'
   env: 'dev'
 
 }
@@ -131,7 +131,7 @@ module hubToSpokePeering '../components/vnet/peer.bicep' = [for i in range(0, le
   params: {
     vnet_from_n: vnet_hub_n[i]
     vnet_to_id: vnetSpoke1[i].outputs.id
-    peeringName: 'peer-from-${vnet_hub_n[i]}-to-${vnet_spoke_1_names[i]}'
+    peeringName: '${vnet_hub_n[i]}-to-${vnet_spoke_1_names[i]}'
   }
 }]
 
@@ -141,7 +141,7 @@ module spokeToHubPeering '../components/vnet/peer.bicep' = [for i in range(0, le
   params: {
     vnet_from_n: vnet_spoke_1_names[i]
     vnet_to_id: vnetHubs[i].outputs.id
-    peeringName: 'peer-from-${vnet_spoke_1_names[i]}-to-${vnet_hub_n[i]}'
+    peeringName: '${vnet_spoke_1_names[i]}-to-${vnet_hub_n[i]}'
   }
 }]
 
