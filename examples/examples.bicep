@@ -9,6 +9,7 @@ var tags = {
 }
 
 param rgs array = ['rg-azure-bicep-dnspr-eastus', 'rg-azure-bicep-dnspr-westus3']
+var pdnsz_rg_n = 'rg-azure-bicep-dnspr'
 param locations array = ['eastus', 'westus3']
 
 // ------------------------------------------------------------------------------------------------
@@ -56,7 +57,6 @@ var fw_ruleset_rule_target_dns = [for l in locations: [
 // ------------------------------------------------------------------------------------------------
 // Prerequisites
 // ------------------------------------------------------------------------------------------------
-
 // NSG - Default
 module nsgDefault '../components/nsg/nsgDefault.bicep' = [for i in range(0, length(locations)) : {
   scope: resourceGroup(rgs[i])
@@ -144,8 +144,8 @@ module vnetSpoke1 '../components/vnet/vnet.bicep' = [for i in range(0, length(vn
 // Deploy vNet peerings
 // ------------------------------------------------------------------------------------------------
 module hubToSpokePeering '../components/vnet/peer.bicep' = [for i in range(0, length(vnet_spoke_1_names)) : {
-  name: 'hubToSpokePeeringDeployment'
   scope: resourceGroup(rgs[i])
+  name: 'hub-to-spoke-peering-deployment'
   params: {
     vnet_from_n: vnet_hub_n[i]
     vnet_to_id: vnetSpoke1[i].outputs.id
@@ -154,8 +154,8 @@ module hubToSpokePeering '../components/vnet/peer.bicep' = [for i in range(0, le
 }]
 
 module spokeToHubPeering '../components/vnet/peer.bicep' = [for i in range(0, length(vnet_spoke_1_names)) : {
-  name: 'spokeToHubPeeringDeployment'
   scope: resourceGroup(rgs[i])
+  name: 'spoke-to-hub-peering-deployment'
   params: {
     vnet_from_n: vnet_spoke_1_names[i]
     vnet_to_id: vnetHubs[i].outputs.id
@@ -163,6 +163,17 @@ module spokeToHubPeering '../components/vnet/peer.bicep' = [for i in range(0, le
   }
 }]
 
+// ------------------------------------------------------------------------------------------------
+// Deploy pdnsz
+// ------------------------------------------------------------------------------------------------
+module pdnsz 'br:bicephubdev.azurecr.io/bicep/modules/pdnsz:a08deb867263fbdad01f529acf70fe0a9e2703f4' =  {
+  scope: resourceGroup(pdnsz_rg_n)
+  name: 'pdnsz-deployment'
+  params: {
+    vnet_ids: [vnetHubs[0].outputs.id, vnetHubs[1].outputs.id]
+    tags: tags
+  }
+}
 
 // ------------------------------------------------------------------------------------------------
 // DNS Private Resolver
