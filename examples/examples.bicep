@@ -9,7 +9,7 @@ var tags = {
 }
 
 param rgs array = ['rg-azure-bicep-dnspr-eastus', 'rg-azure-bicep-dnspr-westus3']
-var pdnsz_rg_n = 'rg-alz-pdnsz'
+var pdnsz_rg_n = 'rg-azure-bicep-dnspr'
 param locations array = ['eastus', 'westus3']
 
 // ------------------------------------------------------------------------------------------------
