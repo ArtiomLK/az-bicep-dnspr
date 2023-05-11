@@ -166,14 +166,14 @@ module spokeToHubPeering '../components/vnet/peer.bicep' = [for i in range(0, le
 // ------------------------------------------------------------------------------------------------
 // Deploy pdnsz
 // ------------------------------------------------------------------------------------------------
-module pdnsz 'br:bicephubdev.azurecr.io/bicep/modules/pdnsz:08191bd3765e01670990fe81b970f3d32ec42545' = [for i in range(0, length(locations)) : {
+module pdnsz 'br:bicephubdev.azurecr.io/bicep/modules/pdnsz:a08deb867263fbdad01f529acf70fe0a9e2703f4' =  {
   scope: resourceGroup(pdnsz_rg_n)
-  name: 'pdnsz-${locations[i]}-deployment'
+  name: 'pdnsz-deployment'
   params: {
-    vnet_id: vnetHubs[i].outputs.id
+    vnet_ids: [vnetHubs[0].outputs.id, vnetHubs[1].outputs.id]
     tags: tags
   }
-}]
+}
 
 // ------------------------------------------------------------------------------------------------
 // DNS Private Resolver
