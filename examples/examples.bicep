@@ -166,7 +166,7 @@ module spokeToHubPeering '../components/vnet/peer.bicep' = [for i in range(0, le
 // ------------------------------------------------------------------------------------------------
 // Deploy pdnsz
 // ------------------------------------------------------------------------------------------------
-module pdnsz 'br:bicephubdev.azurecr.io/bicep/modules/pdnsz:0cedf10f8a190b2e01d9005cb3d386f28c329261' = [for i in range(0, length(locations)) : {
+module pdnsz 'br:bicephubdev.azurecr.io/bicep/modules/pdnsz:08191bd3765e01670990fe81b970f3d32ec42545' = [for i in range(0, length(locations)) : {
   scope: resourceGroup(pdnsz_rg_n)
   name: 'pdnsz-${locations[i]}-deployment'
   params: {
