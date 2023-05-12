@@ -3,56 +3,31 @@
 // ------------------------------------------------------------------------------------------------
 @description('Az Resources tags')
 param tags object = {}
+@description('environment name. dev, qa, uat, stg, prod, etc.')
+param env string
 
-@description('the location for resolver VNET and dns private resolver - Azure DNS Private Resolver available in specific region, refer the documenation to select the supported region for this deployment. For more information https://docs.microsoft.com/azure/dns/dns-private-resolver-overview#regional-availability')
-@allowed([
-  'australiaeast'
-  'uksouth'
-  'northeurope'
-  'southcentralus'
-  'westus3'
-  'eastus'
-  'northcentralus'
-  'westcentralus'
-  'eastus2'
-  'westeurope'
-  'centralus'
-  'canadacentral'
-  'brazilsouth'
-  'francecentral'
-  'swedencentral'
-  'switzerlandnorth'
-  'eastasia'
-  'southeastasia'
-  'japaneast'
-  'koreacentral'
-  'southafricanorth'
-  'centralindia'
-])
+@description('the location for dnspr VNET and dns private dnspr - Azure DNS Private Resolver available in specific region, refer the documenation to select the supported region for this deployment. For more information https://docs.microsoft.com/azure/dns/dns-private-dnspr-overview#regional-availability')
 param location string
+
+// ------------------------------------------------------------------------------------------------
+// Prerequisites params
+// ------------------------------------------------------------------------------------------------
+param dnspr_nsg_n string = 'nsg-default-${env}-${location}'
+
+@description('id of the virtual network where DNS dnspr will be created')
+param vnet_dnspr_n string = 'vnet-hub-extension-dns-${location}-${env}'
+param vnet_dnspr_addr string //= /24
+
+param snet_dnspr_in_n string = 'snet-dnspr-inbound'
+param snet_dnspr_out_n string = 'snet-dnspr-outbound'
+param snet_dnspr_in_addr string //= /28
+param snet_dnspr_out_addr string //= /28
 
 // ------------------------------------------------------------------------------------------------
 // DNSPR Configuration parameters
 // ------------------------------------------------------------------------------------------------
-@description('name of the dns private resolver')
+@description('name of the dns private dnspr')
 param dnspr_n string
-
-// Inbound
-@description('id of the virtual network where DNS resolver will be created')
-param vnet_dnspr_n string
-var vnet_dnspr_id = resourceId('Microsoft.Network/virtualNetworks', vnet_dnspr_n)
-
-@description('name of the subnet that will be used for private resolver inbound endpoint')
-param snet_dnspr_inbound_n string
-var snet_dnspr_inbound_id = resourceId('Microsoft.Network/virtualNetworks/subnets', vnet_dnspr_n, snet_dnspr_inbound_n)
-
-// Outbound Forwarding ruleset and forwarding rule
-@description('name of the subnet that will be used for private resolver outbound endpoint')
-param snet_dnspr_outbound_n string
-var snet_dnspr_outbound_id = resourceId('Microsoft.Network/virtualNetworks/subnets', vnet_dnspr_n, snet_dnspr_outbound_n)
-
-@description('name of the vnet link that links outbound endpoint with forwarding rule set')
-var resolvervnetlink = 'vnetlink-${vnet_dnspr_n}'
 
 @description('name of the forwarding ruleset')
 param fw_ruleset_n string
@@ -66,27 +41,91 @@ param fw_ruleset_rule_domain_n string
 @description('the list of target DNS servers ip address and the port number for conditional forwarding')
 param fw_ruleset_rule_target_dns array
 
-resource resolver 'Microsoft.Network/dnsResolvers@2022-07-01' = {
+@description('name of the vnet link that links outbound endpoint with forwarding rule set')
+var dnspr_vnet_link_n = 'vnetlink-${vnet_dnspr_n}'
+
+// ------------------------------------------------------------------------------------------------
+// Prerequisites
+// ------------------------------------------------------------------------------------------------
+module nsgDNSPR 'components/nsg/nsgDefault.bicep' = {
+  name: '${dnspr_nsg_n}-deployment'
+  params: {
+    name: dnspr_nsg_n
+    tags: tags
+    location: location
+  }
+}
+
+resource vnetDNSPR 'Microsoft.Network/virtualNetworks@2022-11-01' = {
+  name: vnet_dnspr_n
+  location: location
+  tags: tags
+  properties: {
+    addressSpace: {
+      addressPrefixes: [
+        vnet_dnspr_addr
+      ]
+    }
+    subnets: [
+      {
+        name: snet_dnspr_in_n
+        properties: {
+          addressPrefix: snet_dnspr_in_addr
+          networkSecurityGroup: {
+            id: nsgDNSPR.outputs.id
+          }
+          delegations: [
+            {
+              name:'Microsoft.Network.dnsResolvers'
+              properties:{
+                serviceName:'Microsoft.Network/dnsResolvers'
+              }
+            }
+          ]
+        }
+      }
+      {
+        name: snet_dnspr_out_n
+        properties: {
+          addressPrefix: snet_dnspr_out_addr
+          networkSecurityGroup: {
+            id: nsgDNSPR.outputs.id
+          }
+          delegations: [
+            {
+              name:'Microsoft.Network.dnsResolvers'
+              properties:{
+                serviceName:'Microsoft.Network/dnsResolvers'
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+
+resource dnspr 'Microsoft.Network/dnsResolvers@2022-07-01' = {
   name: dnspr_n
   location: location
   properties: {
     virtualNetwork: {
-      id: vnet_dnspr_id
+      id: vnetDNSPR.id
     }
   }
   tags: tags
 }
 
 resource inEndpoint 'Microsoft.Network/dnsResolvers/inboundEndpoints@2022-07-01' = {
-  parent: resolver
-  name: snet_dnspr_inbound_n
+  parent: dnspr
+  name: snet_dnspr_in_n
   location: location
   properties: {
     ipConfigurations: [
       {
         privateIpAllocationMethod: 'Dynamic'
         subnet: {
-          id: snet_dnspr_inbound_id
+          id: vnetDNSPR.properties.subnets[0].id
         }
       }
     ]
@@ -94,12 +133,12 @@ resource inEndpoint 'Microsoft.Network/dnsResolvers/inboundEndpoints@2022-07-01'
 }
 
 resource outEndpoint 'Microsoft.Network/dnsResolvers/outboundEndpoints@2022-07-01' = {
-  parent: resolver
-  name: snet_dnspr_outbound_n
+  parent: dnspr
+  name: snet_dnspr_out_n
   location: location
   properties: {
     subnet: {
-      id: snet_dnspr_outbound_id
+      id: vnetDNSPR.properties.subnets[1].id
     }
   }
 }
@@ -116,16 +155,6 @@ resource fwruleSet 'Microsoft.Network/dnsForwardingRulesets@2022-07-01' = {
   }
 }
 
-resource resolverLink 'Microsoft.Network/dnsForwardingRulesets/virtualNetworkLinks@2022-07-01' = {
-  parent: fwruleSet
-  name: resolvervnetlink
-  properties: {
-    virtualNetwork: {
-      id: vnet_dnspr_id
-    }
-  }
-}
-
 resource fwRules 'Microsoft.Network/dnsForwardingRulesets/forwardingRules@2022-07-01' = {
   parent: fwruleSet
   name: fw_ruleset_rule_n
@@ -134,3 +163,16 @@ resource fwRules 'Microsoft.Network/dnsForwardingRulesets/forwardingRules@2022-0
     targetDnsServers: fw_ruleset_rule_target_dns
   }
 }
+
+resource resolverLink 'Microsoft.Network/dnsForwardingRulesets/virtualNetworkLinks@2022-07-01' = {
+  parent: fwruleSet
+  name: dnspr_vnet_link_n
+  properties: {
+    virtualNetwork: {
+      id: vnetDNSPR.id
+    }
+  }
+}
+
+output dnspr_id string = dnspr.id
+output vnet_dnspr_id string = vnetDNSPR.id
