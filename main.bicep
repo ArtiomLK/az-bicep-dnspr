@@ -15,7 +15,7 @@ param location string
 param dnspr_nsg_n string = 'nsg-default-${env}-${location}'
 
 @description('id of the virtual network where DNS dnspr will be created')
-param vnet_dnspr_n string = 'vnet-hub-extension-dns-${location}-${env}'
+param vnet_dnspr_n string = 'vnet-hub-extension-dns-${env}-${location}'
 param vnet_dnspr_addr string //= /24
 
 param snet_dnspr_in_n string = 'snet-dnspr-inbound'
@@ -176,3 +176,4 @@ resource resolverLink 'Microsoft.Network/dnsForwardingRulesets/virtualNetworkLin
 
 output dnspr_id string = dnspr.id
 output vnet_dnspr_id string = vnetDNSPR.id
+output vnet_dnspr_n string = vnet_dnspr_n

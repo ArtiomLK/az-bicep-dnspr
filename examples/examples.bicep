@@ -15,7 +15,7 @@ param locations array = ['eastus', 'westus3']
 // Topology Deployment parameters
 // ------------------------------------------------------------------------------------------------
 // VNET HUB Extension DNS
-var vnet_hub_extension_dns_n = [for l in locations: 'vnet-hub-${tags.env}-${l}']
+var vnet_hub_extension_dns_n = [for l in locations: 'vnet-hub-extension-dns-${tags.env}-${l}']
 var vnet_hub_extension_dns_addr = [for i in range(1, length(locations)): '10.${i*10}.0.0/24']   // 10.10.0.0/24, 10.20.0.0/24
 
 // vnet-spoke-1
@@ -97,7 +97,7 @@ module hubToSpokePeering '../components/vnet/peer.bicep' = [for i in range(0, le
   scope: resourceGroup(rgs[i])
   name: take('${vnet_hub_extension_dns_n[i]}-to-${vnet_spoke_1_names[i]}', 64)
   params: {
-    vnet_from_n: vnet_hub_extension_dns_n[i]
+    vnet_from_n: dnspr[i].outputs.vnet_dnspr_n
     vnet_to_id: vnetSpoke1[i].outputs.id
     peeringName: '${vnet_hub_extension_dns_n[i]}-to-${vnet_spoke_1_names[i]}'
   }
