@@ -30,7 +30,7 @@ param snet_dnspr_out_addr string //= /28
 param dnspr_n string
 
 @description('name of the forwarding ruleset')
-param fw_ruleset_n string
+param fw_ruleset_n stringnsgDNSPR
 
 @description('name of the forwarding rule name')
 param fw_ruleset_rule_n string
@@ -47,7 +47,7 @@ var dnspr_vnet_link_n = 'vnetlink-${vnet_dnspr_n}'
 // ------------------------------------------------------------------------------------------------
 // Prerequisites
 // ------------------------------------------------------------------------------------------------
-module nsgDNSPR 'components/nsg/nsgDefault.bicep' = {
+module nsgDnspr 'components/nsg/nsgDefault.bicep' = {
   name: '${dnspr_nsg_n}-deployment'
   params: {
     name: dnspr_nsg_n
@@ -56,7 +56,7 @@ module nsgDNSPR 'components/nsg/nsgDefault.bicep' = {
   }
 }
 
-resource vnetDNSPR 'Microsoft.Network/virtualNetworks@2022-11-01' = {
+resource vnetDnspr 'Microsoft.Network/virtualNetworks@2022-11-01' = {
   name: vnet_dnspr_n
   location: location
   tags: tags
@@ -72,7 +72,7 @@ resource vnetDNSPR 'Microsoft.Network/virtualNetworks@2022-11-01' = {
         properties: {
           addressPrefix: snet_dnspr_in_addr
           networkSecurityGroup: {
-            id: nsgDNSPR.outputs.id
+            id: nsgDnspr.outputs.id
           }
           delegations: [
             {
@@ -89,7 +89,7 @@ resource vnetDNSPR 'Microsoft.Network/virtualNetworks@2022-11-01' = {
         properties: {
           addressPrefix: snet_dnspr_out_addr
           networkSecurityGroup: {
-            id: nsgDNSPR.outputs.id
+            id: nsgDnspr.outputs.id
           }
           delegations: [
             {
@@ -110,7 +110,7 @@ resource dnspr 'Microsoft.Network/dnsResolvers@2022-07-01' = {
   location: location
   properties: {
     virtualNetwork: {
-      id: vnetDNSPR.id
+      id: vnetDnspr.id
     }
   }
   tags: tags
@@ -125,7 +125,7 @@ resource inEndpoint 'Microsoft.Network/dnsResolvers/inboundEndpoints@2022-07-01'
       {
         privateIpAllocationMethod: 'Dynamic'
         subnet: {
-          id: vnetDNSPR.properties.subnets[0].id
+          id: vnetDnspr.properties.subnets[0].id
         }
       }
     ]
@@ -138,7 +138,7 @@ resource outEndpoint 'Microsoft.Network/dnsResolvers/outboundEndpoints@2022-07-0
   location: location
   properties: {
     subnet: {
-      id: vnetDNSPR.properties.subnets[1].id
+      id: vnetDnspr.properties.subnets[1].id
     }
   }
 }
@@ -169,11 +169,11 @@ resource resolverLink 'Microsoft.Network/dnsForwardingRulesets/virtualNetworkLin
   name: dnspr_vnet_link_n
   properties: {
     virtualNetwork: {
-      id: vnetDNSPR.id
+      id: vnetDnspr.id
     }
   }
 }
 
 output dnspr_id string = dnspr.id
-output vnet_dnspr_id string = vnetDNSPR.id
+output vnet_dnspr_id string = vnetDnspr.id
 output vnet_dnspr_n string = vnet_dnspr_n
