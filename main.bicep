@@ -30,7 +30,7 @@ param snet_dnspr_out_addr string //= /28
 param dnspr_n string
 
 @description('name of the forwarding ruleset')
-param fw_ruleset_n stringnsgDNSPR
+param fw_ruleset_n string
 
 @description('name of the forwarding rule name')
 param fw_ruleset_rule_n string
@@ -164,7 +164,7 @@ resource fwRules 'Microsoft.Network/dnsForwardingRulesets/forwardingRules@2022-0
   }
 }
 
-resource resolverLink 'Microsoft.Network/dnsForwardingRulesets/virtualNetworkLinks@2022-07-01' = {
+resource dnsprLink 'Microsoft.Network/dnsForwardingRulesets/virtualNetworkLinks@2022-07-01' = {
   parent: fwruleSet
   name: dnspr_vnet_link_n
   properties: {
