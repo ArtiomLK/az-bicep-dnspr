@@ -47,7 +47,7 @@ var dnspr_vnet_link_n = 'vnetlink-${vnet_dnspr_n}'
 // ------------------------------------------------------------------------------------------------
 // Prerequisites
 // ------------------------------------------------------------------------------------------------
-module nsgDnspr 'components/nsg/nsgDefault.bicep' = {
+module nsgDnspr 'modules/nsg/nsgDefault.bicep' = {
   name: '${dnspr_nsg_n}-deployment'
   params: {
     name: dnspr_nsg_n
