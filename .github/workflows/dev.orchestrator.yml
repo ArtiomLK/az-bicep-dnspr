@@ -4,6 +4,7 @@ on:
     paths:
       - '!**.md'
       - '.github/workflows/dev.orchestrator.yml'
+      - 'modules/**'
       - 'examples/examples.bicep'
       - 'main.bicep'
 
@@ -12,11 +13,11 @@ jobs:
   deploy-bicep-module-to-az-and-acr:
     uses: ArtiomLK/commands/.github/workflows/deploy-bicep-module-to-acr.yaml@main
     with:
-      ENVIRONMENT: dev
-      ACR_MODULE_N: dnspr
-      RG_N: rg-azure-bicep-dnspr-eastus
-      MAIN_BICEP_FILE_PATH: main.bicep
-      TEST_BICEP_FILE_FILE: examples/examples.bicep
+      ENVIRONMENT: ${{ vars.ENVIRONMENT_STAGE }}
+      ACR_MODULE_N: ${{ vars.ACR_MODULE_N }}
+      RG_N: ${{ vars.RG_N }}
+      MAIN_BICEP_FILE_PATH: ${{ vars.MAIN_BICEP_FILE_PATH }}
+      TEST_BICEP_FILE_FILE: ${{ vars.EXAMPLE_BICEP_FILE_PATH }}
     secrets:
       AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
       ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}

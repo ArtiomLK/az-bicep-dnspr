@@ -8,7 +8,7 @@ var tags = {
   env: 'dev'
 }
 
-param rgs array = ['rg-azure-bicep-dnspr-eastus', 'rg-azure-bicep-dnspr-westus3']
+param rgs array = ['${resourceGroup().name}', '${resourceGroup().name}']
 param locations array = ['eastus', 'westus3']
 
 // ------------------------------------------------------------------------------------------------
@@ -54,7 +54,7 @@ var fw_ruleset_rule_target_dns = [for l in locations: [
 // Prerequisites
 // ------------------------------------------------------------------------------------------------
 // NSG - Default
-module nsgDefault '../components/nsg/nsgDefault.bicep' = [for i in range(0, length(locations)) : {
+module nsgDefault '../modules/nsg/nsgDefault.bicep' = [for i in range(0, length(locations)) : {
   scope: resourceGroup(rgs[i])
   name: 'nsg-default-${locations[i]}'
   params: {
@@ -67,7 +67,7 @@ module nsgDefault '../components/nsg/nsgDefault.bicep' = [for i in range(0, leng
 // ------------------------------------------------------------------------------------------------
 // Deploy Spokes Vnets
 // ------------------------------------------------------------------------------------------------
-module vnetSpoke1 '../components/vnet/vnet.bicep' = [for i in range(0, length(vnet_spoke_1_names)) : {
+module vnetSpoke1 '../modules/vnet/vnet.bicep' = [for i in range(0, length(vnet_spoke_1_names)) : {
   scope: resourceGroup(rgs[i])
   name: vnet_spoke_1_names[i]
   params: {
@@ -93,7 +93,7 @@ module vnetSpoke1 '../components/vnet/vnet.bicep' = [for i in range(0, length(vn
 // ------------------------------------------------------------------------------------------------
 // Deploy vNet peerings
 // ------------------------------------------------------------------------------------------------
-module hubToSpokePeering '../components/vnet/peer.bicep' = [for i in range(0, length(vnet_spoke_1_names)) : {
+module hubToSpokePeering '../modules/vnet/peer.bicep' = [for i in range(0, length(vnet_spoke_1_names)) : {
   scope: resourceGroup(rgs[i])
   name: take('${vnet_hub_extension_dns_n[i]}-to-${vnet_spoke_1_names[i]}', 64)
   params: {
@@ -103,7 +103,7 @@ module hubToSpokePeering '../components/vnet/peer.bicep' = [for i in range(0, le
   }
 }]
 
-module spokeToHubPeering '../components/vnet/peer.bicep' = [for i in range(0, length(vnet_spoke_1_names)) : {
+module spokeToHubPeering '../modules/vnet/peer.bicep' = [for i in range(0, length(vnet_spoke_1_names)) : {
   scope: resourceGroup(rgs[i])
   name: take('${vnet_spoke_1_names[i]}-to-${vnet_hub_extension_dns_n[i]}', 64)
   params: {
