@@ -8,7 +8,7 @@ var tags = {
   env: 'dev'
 }
 
-param rgs array = ['rg-azure-bicep-dnspr-eastus', 'rg-azure-bicep-dnspr-westus3']
+param rgs array = ['${resourceGroup().name}', '${resourceGroup().name}']
 param locations array = ['eastus', 'westus3']
 
 // ------------------------------------------------------------------------------------------------
