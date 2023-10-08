@@ -34,10 +34,10 @@ param dnspr_n string
 param fw_ruleset_n string = 'fw-ruleset-${dnspr_n}'
 
 @description('name of the forwarding rule name')
-param fw_ruleset_rule_n string = ''
+param fw_ruleset_rule_n string = 'fw-ruleset-rule-${dnspr_n}'
 
 @description('the target domain name for the forwarding ruleset')
-param fw_ruleset_rule_domain_n string = ''
+param fw_ruleset_rule_domain_n string = 'contoso.com.'
 
 @description('the list of target DNS servers ip address and the port number for conditional forwarding')
 param fw_ruleset_rule_target_dns array = []
