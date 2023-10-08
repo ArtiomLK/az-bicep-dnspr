@@ -184,7 +184,7 @@ resource fwRules 'Microsoft.Network/dnsForwardingRulesets/forwardingRules@2022-0
   }
 }
 
-resource dnsprLink 'Microsoft.Network/dnsForwardingRulesets/virtualNetworkLinks@2022-07-01' = {
+resource dnsprLink 'Microsoft.Network/dnsForwardingRulesets/virtualNetworkLinks@2022-07-01' = if (deploy_outbound_endpoint) {
   parent: fwruleSet
   name: dnspr_vnet_link_n
   properties: {
