@@ -3,25 +3,26 @@
 // ------------------------------------------------------------------------------------------------
 @description('Az Resources tags')
 param tags object = {}
-@description('environment name. dev, qa, uat, stg, prod, etc.')
-param env string
 
 @description('the location for dnspr VNET and dns private dnspr - Azure DNS Private Resolver available in specific region, refer the documenation to select the supported region for this deployment. For more information https://docs.microsoft.com/azure/dns/dns-private-dnspr-overview#regional-availability')
 param location string
 
+param deploy_outbound_endpoint bool = false
+
 // ------------------------------------------------------------------------------------------------
 // Prerequisites params
 // ------------------------------------------------------------------------------------------------
-param dnspr_nsg_n string = 'nsg-default-${env}-${location}'
+param nsg_default_dnspr_n string = 'nsg-default-dnspr-${location}'
 
 @description('id of the virtual network where DNS dnspr will be created')
-param vnet_dnspr_n string = 'vnet-hub-extension-dns-${env}-${location}'
-param vnet_dnspr_addr string //= /24
+param vnet_dnspr_n string
+param vnet_dnspr_addr string //= /23
 
 param snet_dnspr_in_n string = 'snet-dnspr-inbound'
+param snet_dnspr_in_addr string //= /24
+param snet_dnspr_in_ip string //= n.n.n.4
 param snet_dnspr_out_n string = 'snet-dnspr-outbound'
-param snet_dnspr_in_addr string //= /28
-param snet_dnspr_out_addr string //= /28
+param snet_dnspr_out_addr string = '' //= /24
 
 // ------------------------------------------------------------------------------------------------
 // DNSPR Configuration parameters
@@ -30,16 +31,16 @@ param snet_dnspr_out_addr string //= /28
 param dnspr_n string
 
 @description('name of the forwarding ruleset')
-param fw_ruleset_n string
+param fw_ruleset_n string = ''
 
 @description('name of the forwarding rule name')
-param fw_ruleset_rule_n string
+param fw_ruleset_rule_n string = ''
 
 @description('the target domain name for the forwarding ruleset')
-param fw_ruleset_rule_domain_n string
+param fw_ruleset_rule_domain_n string = ''
 
 @description('the list of target DNS servers ip address and the port number for conditional forwarding')
-param fw_ruleset_rule_target_dns array
+param fw_ruleset_rule_target_dns array = []
 
 @description('name of the vnet link that links outbound endpoint with forwarding rule set')
 var dnspr_vnet_link_n = 'vnetlink-${vnet_dnspr_n}'
@@ -47,10 +48,10 @@ var dnspr_vnet_link_n = 'vnetlink-${vnet_dnspr_n}'
 // ------------------------------------------------------------------------------------------------
 // Prerequisites
 // ------------------------------------------------------------------------------------------------
-module nsgDnspr 'modules/nsg/nsgDefault.bicep' = {
-  name: '${dnspr_nsg_n}-deployment'
+module nsgDefaultDnspr 'modules/nsg/nsgDefault.bicep' = {
+  name: '${nsg_default_dnspr_n}-deployment'
   params: {
-    name: dnspr_nsg_n
+    name: nsg_default_dnspr_n
     tags: tags
     location: location
   }
@@ -66,19 +67,19 @@ resource vnetDnspr 'Microsoft.Network/virtualNetworks@2022-11-01' = {
         vnet_dnspr_addr
       ]
     }
-    subnets: [
+    subnets: deploy_outbound_endpoint ? [
       {
         name: snet_dnspr_in_n
         properties: {
           addressPrefix: snet_dnspr_in_addr
           networkSecurityGroup: {
-            id: nsgDnspr.outputs.id
+            id: nsgDefaultDnspr.outputs.id
           }
           delegations: [
             {
-              name:'Microsoft.Network.dnsResolvers'
-              properties:{
-                serviceName:'Microsoft.Network/dnsResolvers'
+              name: 'Microsoft.Network.dnsResolvers'
+              properties: {
+                serviceName: 'Microsoft.Network/dnsResolvers'
               }
             }
           ]
@@ -89,13 +90,31 @@ resource vnetDnspr 'Microsoft.Network/virtualNetworks@2022-11-01' = {
         properties: {
           addressPrefix: snet_dnspr_out_addr
           networkSecurityGroup: {
-            id: nsgDnspr.outputs.id
+            id: nsgDefaultDnspr.outputs.id
           }
           delegations: [
             {
-              name:'Microsoft.Network.dnsResolvers'
-              properties:{
-                serviceName:'Microsoft.Network/dnsResolvers'
+              name: 'Microsoft.Network.dnsResolvers'
+              properties: {
+                serviceName: 'Microsoft.Network/dnsResolvers'
+              }
+            }
+          ]
+        }
+      }
+    ] : [
+      {
+        name: snet_dnspr_in_n
+        properties: {
+          addressPrefix: snet_dnspr_in_addr
+          networkSecurityGroup: {
+            id: nsgDefaultDnspr.outputs.id
+          }
+          delegations: [
+            {
+              name: 'Microsoft.Network.dnsResolvers'
+              properties: {
+                serviceName: 'Microsoft.Network/dnsResolvers'
               }
             }
           ]
@@ -123,7 +142,8 @@ resource inEndpoint 'Microsoft.Network/dnsResolvers/inboundEndpoints@2022-07-01'
   properties: {
     ipConfigurations: [
       {
-        privateIpAllocationMethod: 'Dynamic'
+        privateIpAllocationMethod: 'Static'
+        privateIpAddress: snet_dnspr_in_ip
         subnet: {
           id: vnetDnspr.properties.subnets[0].id
         }
@@ -132,7 +152,7 @@ resource inEndpoint 'Microsoft.Network/dnsResolvers/inboundEndpoints@2022-07-01'
   }
 }
 
-resource outEndpoint 'Microsoft.Network/dnsResolvers/outboundEndpoints@2022-07-01' = {
+resource outEndpoint 'Microsoft.Network/dnsResolvers/outboundEndpoints@2022-07-01' = if (deploy_outbound_endpoint) {
   parent: dnspr
   name: snet_dnspr_out_n
   location: location
@@ -143,7 +163,7 @@ resource outEndpoint 'Microsoft.Network/dnsResolvers/outboundEndpoints@2022-07-0
   }
 }
 
-resource fwruleSet 'Microsoft.Network/dnsForwardingRulesets@2022-07-01' = {
+resource fwruleSet 'Microsoft.Network/dnsForwardingRulesets@2022-07-01' = if (deploy_outbound_endpoint) {
   name: fw_ruleset_n
   location: location
   properties: {
@@ -155,7 +175,7 @@ resource fwruleSet 'Microsoft.Network/dnsForwardingRulesets@2022-07-01' = {
   }
 }
 
-resource fwRules 'Microsoft.Network/dnsForwardingRulesets/forwardingRules@2022-07-01' = {
+resource fwRules 'Microsoft.Network/dnsForwardingRulesets/forwardingRules@2022-07-01' = if (deploy_outbound_endpoint) {
   parent: fwruleSet
   name: fw_ruleset_rule_n
   properties: {
