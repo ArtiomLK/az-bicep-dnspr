@@ -31,7 +31,7 @@ param snet_dnspr_out_addr string = '' //= /24
 param dnspr_n string
 
 @description('name of the forwarding ruleset')
-param fw_ruleset_n string = ''
+param fw_ruleset_n string = 'fw-ruleset-${dnspr_n}'
 
 @description('name of the forwarding rule name')
 param fw_ruleset_rule_n string = ''
