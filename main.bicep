@@ -18,6 +18,7 @@ param nsg_default_dnspr_n string = 'nsg-default-dnspr-${location}'
 param vnet_dnspr_n string
 param vnet_dnspr_addr string //= /23
 
+param dnspr_in_n string = 'inbound-endpoint-${location}'
 param snet_dnspr_in_n string = 'snet-dnspr-inbound'
 param snet_dnspr_in_addr string //= /24
 param snet_dnspr_in_ip string //= n.n.n.4
@@ -137,7 +138,7 @@ resource dnspr 'Microsoft.Network/dnsResolvers@2022-07-01' = {
 
 resource inEndpoint 'Microsoft.Network/dnsResolvers/inboundEndpoints@2022-07-01' = {
   parent: dnspr
-  name: snet_dnspr_in_n
+  name: dnspr_in_n
   location: location
   properties: {
     ipConfigurations: [
