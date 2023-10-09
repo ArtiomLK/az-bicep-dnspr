@@ -15,15 +15,15 @@ param deploy_outbound_endpoint bool = false
 param nsg_default_dnspr_n string = 'nsg-default-dnspr-${location}'
 
 @description('id of the virtual network where DNS dnspr will be created')
-param vnet_dnspr_n string
-param vnet_dnspr_addr string //= /23
+param vnet_n string
+param vnet_addr string //= /23
 
 param dnspr_in_n string = 'inbound-endpoint-${location}'
-param snet_dnspr_in_n string = 'snet-dnspr-inbound'
-param snet_dnspr_in_addr string //= /24
-param snet_dnspr_in_ip string //= n.n.n.4
-param snet_dnspr_out_n string = 'snet-dnspr-outbound'
-param snet_dnspr_out_addr string = '' //= /24
+param snet_in_n string = 'snet-dnspr-inbound'
+param snet_in_addr string //= /24
+param snet_in_ip string //= n.n.n.4
+param snet_out_n string = 'snet-dnspr-outbound'
+param snet_out_addr string = '' //= /24
 
 // ------------------------------------------------------------------------------------------------
 // DNSPR Configuration parameters
@@ -44,7 +44,7 @@ param fw_ruleset_rule_domain_n string = 'contoso.com.'
 param fw_ruleset_rule_target_dns array = []
 
 @description('name of the vnet link that links outbound endpoint with forwarding rule set')
-var dnspr_vnet_link_n = 'vnetlink-${vnet_dnspr_n}'
+var dnspr_vnet_link_n = 'vnetlink-${vnet_n}'
 
 // ------------------------------------------------------------------------------------------------
 // Prerequisites
@@ -59,20 +59,20 @@ module nsgDefaultDnspr 'modules/nsg/nsgDefault.bicep' = {
 }
 
 resource vnetDnspr 'Microsoft.Network/virtualNetworks@2022-11-01' = {
-  name: vnet_dnspr_n
+  name: vnet_n
   location: location
   tags: tags
   properties: {
     addressSpace: {
       addressPrefixes: [
-        vnet_dnspr_addr
+        vnet_addr
       ]
     }
     subnets: deploy_outbound_endpoint ? [
       {
-        name: snet_dnspr_in_n
+        name: snet_in_n
         properties: {
-          addressPrefix: snet_dnspr_in_addr
+          addressPrefix: snet_in_addr
           networkSecurityGroup: {
             id: nsgDefaultDnspr.outputs.id
           }
@@ -87,9 +87,9 @@ resource vnetDnspr 'Microsoft.Network/virtualNetworks@2022-11-01' = {
         }
       }
       {
-        name: snet_dnspr_out_n
+        name: snet_out_n
         properties: {
-          addressPrefix: snet_dnspr_out_addr
+          addressPrefix: snet_out_addr
           networkSecurityGroup: {
             id: nsgDefaultDnspr.outputs.id
           }
@@ -105,9 +105,9 @@ resource vnetDnspr 'Microsoft.Network/virtualNetworks@2022-11-01' = {
       }
     ] : [
       {
-        name: snet_dnspr_in_n
+        name: snet_in_n
         properties: {
-          addressPrefix: snet_dnspr_in_addr
+          addressPrefix: snet_in_addr
           networkSecurityGroup: {
             id: nsgDefaultDnspr.outputs.id
           }
@@ -144,7 +144,7 @@ resource inEndpoint 'Microsoft.Network/dnsResolvers/inboundEndpoints@2022-07-01'
     ipConfigurations: [
       {
         privateIpAllocationMethod: 'Static'
-        privateIpAddress: snet_dnspr_in_ip
+        privateIpAddress: snet_in_ip
         subnet: {
           id: vnetDnspr.properties.subnets[0].id
         }
@@ -155,7 +155,7 @@ resource inEndpoint 'Microsoft.Network/dnsResolvers/inboundEndpoints@2022-07-01'
 
 resource outEndpoint 'Microsoft.Network/dnsResolvers/outboundEndpoints@2022-07-01' = if (deploy_outbound_endpoint) {
   parent: dnspr
-  name: snet_dnspr_out_n
+  name: snet_out_n
   location: location
   properties: {
     subnet: {
@@ -197,4 +197,4 @@ resource dnsprLink 'Microsoft.Network/dnsForwardingRulesets/virtualNetworkLinks@
 
 output dnspr_id string = dnspr.id
 output vnet_dnspr_id string = vnetDnspr.id
-output vnet_dnspr_n string = vnet_dnspr_n
+output vnet_n string = vnet_n

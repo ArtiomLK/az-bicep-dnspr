@@ -98,7 +98,7 @@ module hubToSpokePeering '../modules/vnet/peer.bicep' = [for i in range(0, lengt
   scope: resourceGroup(rgs[i])
   name: take('${vnet_hub_extension_dns_n[i]}-to-${vnet_spoke_1_names[i]}', 64)
   params: {
-    vnet_from_n: dnsprInboundOutbound[i].outputs.vnet_dnspr_n
+    vnet_from_n: dnsprInboundOutbound[i].outputs.vnet_n
     vnet_to_id: vnetSpoke1[i].outputs.id
     peeringName: '${vnet_hub_extension_dns_n[i]}-to-${vnet_spoke_1_names[i]}'
   }
@@ -121,14 +121,15 @@ module dnsprInboundOutbound '../main.bicep' = [for i in range(0, length(location
   scope: resourceGroup(rgs[i])
   name: dnspr_n[i]
   params: {
-    vnet_dnspr_n: vnet_hub_extension_dns_n[i]
-    vnet_dnspr_addr: vnet_hub_extension_dns_addr[i]
-    snet_dnspr_in_addr: snet_dnspr_inbound_addr[i]
-    snet_dnspr_out_addr: snet_dnspr_outbound_addr[i]
-    snet_dnspr_in_ip: snet_dnspr_inbound_ip[i]
-
     dnspr_n: dnspr_n[i]
 
+    vnet_n: vnet_hub_extension_dns_n[i]
+    vnet_addr: vnet_hub_extension_dns_addr[i]
+    snet_in_addr: snet_dnspr_inbound_addr[i]
+    snet_out_addr: snet_dnspr_outbound_addr[i]
+    snet_in_ip: snet_dnspr_inbound_ip[i]
+
+    deploy_outbound_endpoint: true
     fw_ruleset_n: fw_ruleset_n[i]
     fw_ruleset_rule_n: fw_ruleset_rule_n[i]
     fw_ruleset_rule_domain_n: fw_ruleset_rule_domain_n[i]
@@ -146,12 +147,12 @@ module dnsprInbound '../main.bicep' = {
   scope: resourceGroup(rgs[0])
   name: 'dnspr-inbound-deployment'
   params: {
-    vnet_dnspr_n: 'vnet-dnspr-inbound-${locations[0]}'
-    vnet_dnspr_addr: '10.100.0.0/23'
-    snet_dnspr_in_addr: '10.100.0.0/24'
-    snet_dnspr_in_ip: '10.100.0.4'
-
     dnspr_n: 'dnspr-inbound-${locations[0]}'
+
+    vnet_n: 'vnet-dnspr-inbound-${locations[0]}'
+    vnet_addr: '10.100.0.0/23'
+    snet_in_addr: '10.100.0.0/24'
+    snet_in_ip: '10.100.0.4'
 
     location: locations[0]
     tags: tags
