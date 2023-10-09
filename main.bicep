@@ -21,7 +21,7 @@ param vnet_addr string //= /23
 param dnspr_in_n string = 'inbound-endpoint-${location}'
 param snet_in_n string = 'snet-dnspr-inbound'
 param snet_in_addr string //= /24
-param snet_in_ip string //= n.n.n.4
+param snet_in_ip string = '' //= n.n.n.4
 param snet_out_n string = 'snet-dnspr-outbound'
 param snet_out_addr string = '' //= /24
 
@@ -142,7 +142,12 @@ resource inEndpoint 'Microsoft.Network/dnsResolvers/inboundEndpoints@2022-07-01'
   location: location
   properties: {
     ipConfigurations: [
-      {
+      empty(snet_in_ip) ? {
+        privateIpAllocationMethod: 'Dynamic'
+        subnet: {
+          id: vnetDnspr.properties.subnets[0].id
+        }
+      } : {
         privateIpAllocationMethod: 'Static'
         privateIpAddress: snet_in_ip
         subnet: {
