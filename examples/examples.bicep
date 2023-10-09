@@ -146,7 +146,7 @@ module dnsprInbound '../main.bicep' = {
   scope: resourceGroup(rgs[0])
   name: 'dnspr-inbound-deployment'
   params: {
-    vnet_dnspr_n: 'vnet-dnspr-inbound-${locations[0]}}'
+    vnet_dnspr_n: 'vnet-dnspr-inbound-${locations[0]}'
     vnet_dnspr_addr: '10.100.0.0/23'
     snet_dnspr_in_addr: '10.100.0.0/24'
     snet_dnspr_in_ip: '10.100.0.4'
